@@ -1,56 +1,73 @@
-import {useEffect, useState} from 'react'
+import { useEffect, useState } from 'react'
 
 const App = () => {
   const [divisas, setDivisas] = useState([])
-  const[seleccion, setSeleccion] = useState('')
+  const [seleccion, setSeleccion] = useState('')
   const [divisaDefinitiva, setDivisaDefinitiva] = useState(null)
+  const [valor, setValor] = useState('')
+  const [resultado, setResultado] = useState(null)
 
   useEffect(() => {
-   consultar()
-   console.log(divisas)
+    consultar()
   }, [])
 
   const consultar = async () => {
     let url = "https://co.dolarapi.com/v1/cotizaciones"
-     const resultado = await fetch(url)
-     const data = await resultado.json()
-     setDivisas(data)
-     return resultado.json()
+    const respuesta = await fetch(url)
+    const data = await respuesta.json()
+    setDivisas(data)
   }
+
   const cambioDivisa = (idDivisa) => {
-    console.log("divisa seleccionada",idDivisa)
     setSeleccion(idDivisa)
-    setDivisaDefinitiva(buscarDivisa(idDivisa))
-    console.log("divisa encontrada", divisaDefinitiva)
+    const encontrada = buscarDivisa(idDivisa)
+    setDivisaDefinitiva(encontrada)
   }
 
   const buscarDivisa = (idDivisa) => {
-    let divisaEncontrada = divisas.find(objdivisa => 
-      objdivisa.moneda === idDivisa)
-      
-    return divisaEncontrada
+    return divisas.find(objdivisa => 
+      objdivisa.moneda === idDivisa
+    )
+  }
+
+  const convertir = () => {
+    if (!valor || !divisaDefinitiva) return
+
+    const tasa = divisaDefinitiva.ultimoCierre
+    const conversion = valor / tasa
+    setResultado(conversion.toFixed(2))
   }
 
   return (
-    <>  <div className="contenedor">
-        <h1>Convertir desde COP</h1>
-        <input type="number" id="valor" placeholder="Cantidad en pesos (COP)"/>
-      
-        <select id="opcionesDivisas"
-         onChange={(evento) => cambioDivisa(evento.target.value)}>
-            <option value="">Cargando divisas...</option>
-        { divisas &&
-          divisas.map (divisa => {
-            return <option value={divisa.moneda}>{divisa.nombre}</option>
-          })
-        }
-        </select>
+    <div className="contenedor">
+      <h1>Convertir desde COP</h1>
 
-        {/* <button >Convertir</button> */}
-        <p id="resultado"></p>
-        {divisaDefinitiva?.ultimoCierre}
+      <input 
+        type="number" 
+        placeholder="Cantidad en pesos (COP)"
+        value={valor}
+        onChange={(e) => setValor(e.target.value)}
+      />
+
+      <select
+        onChange={(evento) => cambioDivisa(evento.target.value)}
+      >
+        <option value="">Selecciona una divisa</option>
+        {divisas.map(divisa => (
+          <option key={divisa.moneda} value={divisa.moneda}>
+            {divisa.nombre}
+          </option>
+        ))}
+      </select>
+
+      <button onClick={convertir}>Convertir</button>
+
+      {resultado && (
+        <p>
+          Resultado: {resultado} {seleccion}
+        </p>
+      )}
     </div>
-</>
   )
 }
 
